@@ -1,0 +1,92 @@
+﻿@page "/register"
+@using Microsoft.EntityFrameworkCore
+@using OnlineShopBlazor.Models.Db
+@using FluentValidation
+@using Blazored.FluentValidation
+@inject IValidator<User> Validator
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+
+<PageTitle>Register</PageTitle>
+<hr />
+<div class="row" style="margin-top:150px; width: 1520px;">
+    <div class="col-md-4 mx-auto">
+        <EditForm method="post" Model="User" OnValidSubmit="HandleValidSubmit" FormName="register" Enhance>
+            <FluentValidationValidator Validator="Validator" />
+
+            @* Display general error messages *@
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @_errorMessage
+                </div>
+            }
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email:</label> 
+                <InputText id="email" @bind-Value="User.Email" class="form-control" /> 
+                <ValidationMessage For="() => User.Email" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="fullname" class="form-label">FullName:</label> 
+                <InputText id="fullname" @bind-Value="User.FullName" class="form-control" /> 
+                <ValidationMessage For="() => User.FullName" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="password" class="form-label">Password:</label> 
+                <InputText id="password" @bind-Value="User.Password" class="form-control" /> 
+                <ValidationMessage For="() => User.Password" class="text-danger" /> 
+            </div>              
+            <button type="submit" class="btn btn-primary">Register</button>
+        </EditForm>
+        <br />
+        <div>
+            <a href="/login">Already have account? Login</a>
+        </div>
+    </div>
+</div>
+
+<Preload />
+
+@code {
+    [SupplyParameterFromForm]
+    private User User { get; set; } = new();
+
+    [Inject]
+    protected PreloadService PreloadService { get; set; } = default!;
+    private string? _errorMessage = null;
+
+    private async Task HandleValidSubmit()
+    {
+
+         
+        PreloadService.Show(SpinnerColor.Light, "Saving data...");
+        await Task.Delay(1500);
+
+        using var context = DbFactory.CreateDbContext();
+
+        if (context.Users.Any(x => x.Email == User.Email.Trim().ToLower()))
+        {
+            PreloadService.Hide();
+            _errorMessage = "this email is already in use";
+            return;
+        }
+
+        // --- Set default values for the new user ---
+        User.IsAdmin = false; // Default new users are not admins
+        User.RegisterDate = DateTime.Now; // Set registration timestamp
+        User.RecoveryCode = null; // No recovery code initially
+        User.Email = User.Email.Trim().ToLower();
+        User.Password = User.Password.Trim();
+        User.FullName = User.FullName.Trim();
+
+        await context.Users.AddAsync(User);
+        await context.SaveChangesAsync();
+        //------------------
+        _errorMessage = "";
+        User = new(); // Create a new instance to clear bound fields
+        NavigationManager.NavigateTo("/login");
+    }
+}

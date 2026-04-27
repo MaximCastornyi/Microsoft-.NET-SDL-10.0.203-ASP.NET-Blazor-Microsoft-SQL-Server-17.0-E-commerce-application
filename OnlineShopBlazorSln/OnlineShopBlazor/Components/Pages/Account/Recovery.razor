@@ -1,0 +1,109 @@
+﻿@page "/recovery"
+@using Microsoft.EntityFrameworkCore
+@using OnlineShopBlazor.Models.Db
+@using OnlineShopBlazor.Models.ViewModels
+@using OnlineShopBlazor.Models.Services
+@using FluentValidation
+@using Blazored.FluentValidation
+@using System.Net.Mail
+@inject IValidator<RecoveryViewModel> Validator
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject LoginService _loginService
+@rendermode InteractiveServer
+
+
+
+<PageTitle>Recovery</PageTitle>
+<hr />
+<div class="row" style="margin-top:150px; width: 1520px;">
+    <div class="col-md-4 mx-auto">
+        <EditForm method="post" Model="RecoveryModel" OnValidSubmit="HandleValidSubmit" FormName="Login" Enhance>
+            <FluentValidationValidator Validator="Validator" />
+
+            @* Display general error messages *@
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @_errorMessage
+                </div>
+            }
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email:</label>
+                <InputText id="email" @bind-Value="RecoveryModel.Email" class="form-control" />
+                <ValidationMessage For="() => RecoveryModel.Email" class="text-danger" />
+            </div>
+            <button type="submit" class="btn btn-primary" disabled="@(loading ? "disabled" : null)">
+                @if (loading)
+                {
+                    <Spinner Class="me-3" Type="SpinnerType.Dots" Color="SpinnerColor.Light" />
+                }
+                else
+                {
+                    <span>
+                        Recovery
+                    </span>
+                }
+            </button>
+        </EditForm>
+        <br />
+        <div>
+            <a href="/register">Want to create an account? Register</a>
+        </div>
+    </div>
+</div>
+
+<Preload />
+
+@code {
+    [SupplyParameterFromForm]
+    private RecoveryViewModel RecoveryModel { get; set; } = new();
+
+    private string? _errorMessage = null;
+    private bool loading = false;
+
+    private async Task HandleValidSubmit()
+    {
+        loading = true;
+        await Task.Delay(1500);
+        ////-------------------------------------------
+
+        using var _context = DbFactory.CreateDbContext();
+
+        var foundUser = _context.Users.FirstOrDefault(x => x.Email == RecoveryModel.Email.ToLower().Trim());
+        if (foundUser == null)
+        {
+            _errorMessage = "Email is not exist";
+            loading = false;
+
+            return;
+        }
+
+        ////-------------------------------------------
+
+        foundUser.RecoveryCode = new Random().Next(10000, 100000);
+        _context.Users.Update(foundUser);
+        _context.SaveChanges();
+
+        ////-------------------------------------------
+
+        MailMessage mail = new MailMessage();
+        SmtpClient SmtpServer = new SmtpClient("smtp.gmail.com");
+
+        mail.From = new MailAddress("nets.devs@gmail.com");
+        mail.To.Add(foundUser.Email);
+        mail.Subject = "Recovery code";
+        mail.Body = "youre recovery code:" + foundUser.RecoveryCode;
+
+        SmtpServer.Port = 587;
+        SmtpServer.Credentials = new System.Net.NetworkCredential("nets.devs@gmail.com", "google control password");
+        SmtpServer.EnableSsl = true;
+
+        await SmtpServer.SendMailAsync(mail);
+
+        loading = false;
+        NavigationManager.NavigateTo("/login");
+        
+    }
+}

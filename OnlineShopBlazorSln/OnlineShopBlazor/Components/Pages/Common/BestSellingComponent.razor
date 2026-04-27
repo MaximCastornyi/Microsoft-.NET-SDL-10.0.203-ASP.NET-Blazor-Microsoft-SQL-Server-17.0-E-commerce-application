@@ -1,0 +1,60 @@
+﻿@* @using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbContextFactory
+
+@rendermode InteractiveServer
+<Carousel>
+
+    @if (BestSellingProducts.Any())
+    {
+        decimal ab = BestSellingProducts.Count;
+        decimal aa = (decimal)(ab / 4);
+
+        var numberOfRow = Math.Ceiling(aa);
+
+
+        bool active = true;
+
+        for (int i = 0; i < numberOfRow; i++)
+        {
+            var productsToDisplay = BestSellingProducts.Skip(i * 4).Take(4);  // Skip i*4 and take 4 items for each row
+            <CarouselItem Active="active">
+
+                <div class="row">
+                    @foreach (var item in productsToDisplay)
+                    {
+                        var product = new Product
+                        {
+                            Id = item.ProductId,
+                            Title = item.Title,
+                            Price = item.Price,
+                            ImageName = item.ImageName,
+                            Qty = item.Qty,
+                        };
+                        <div class="col-6 col-md-3 single_product">
+                            <OnlineShopBlazor.Components.Pages.Common.ProductBoxComponent Model="product" />
+                        </div>
+                    }
+                </div>
+            </CarouselItem>
+
+            active = false;
+        }
+    }
+
+</Carousel>
+
+@code {
+    public List<BestSellingFinal> BestSellingProducts { get; set; } = new List<BestSellingFinal>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        using var dbContext = DbContextFactory.CreateDbContext();
+
+        BestSellingProducts = await dbContext.BestSellingFinals
+                                     .OrderByDescending(x => x.TotalSum)
+                                     .Take(8)
+                                     .ToListAsync();
+
+    }
+} *@

@@ -1,0 +1,106 @@
+﻿@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@rendermode InteractiveServer
+@using Blazored.FluentValidation
+
+<div class="reviews_wrapper">
+    <h2>@Comments.Count reviews for @Product.Title</h2>
+    @foreach (var item in Comments)
+    {
+        <div class="reviews_comment_box">
+            <div class="comment_thmb">
+                <img src="assets/img/blog/comment2.jpg" alt="">
+            </div>
+            <div class="comment_text">
+                <div class="reviews_meta">
+
+                    <p><strong>@item.Name </strong>- @item.CreateDate</p>
+                    <span>@((MarkupString)(item.CommentText.Replace("\n", "<br/>")))</span>
+                </div>
+            </div>
+
+        </div>
+    }
+   
+    <div class="comment_title">
+        <h2>Add a review </h2>
+        <p>Your email address will not be published.  Required fields are marked </p>
+    </div>
+    
+    <div class="product_review_form">
+        <EditForm Model="Comment" OnValidSubmit="SubmitComment" FormName="create">
+            @* <DataAnnotationsValidator /> *@
+            <FluentValidationValidator @ref="_fluentValidationValidator" />
+            <ValidationSummary class="text-danger" role="alert" />
+
+            <div class="row">
+                <div class="col-12">
+                    <label for="review_comment">Your review </label>
+                    <InputTextArea @bind-Value="Comment.CommentText" id="review_comment"></InputTextArea>
+                    <ValidationMessage For="() => Comment.CommentText" class="text-danger" />
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <label for="author">Name</label>
+                    <InputText id="author" @bind-Value="Comment.Name" />
+                    <ValidationMessage For="() => Comment.Name" class="text-danger" />
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <label for="email">Email </label>
+                    <InputText id="email" @bind-Value="Comment.Email" />
+                    <ValidationMessage For="() => Comment.Email" class="text-danger" />
+                </div>
+            </div>
+            <button type="submit">Submit</button>
+        </EditForm>
+    </div>
+</div>
+<Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.BottomRight" />
+<Preload />
+@code {
+    [Parameter]
+    public Product Product { get; set; } = default!;
+    private List<Comment> Comments { get; set; } = new();
+
+    [SupplyParameterFromForm]
+    public Comment Comment { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        using var dbContext = DbFactory.CreateDbContext();
+
+        Comments = await dbContext.Comments.Where(x => x.ProductId == Product.Id).ToListAsync();
+ 
+    }
+
+    private FluentValidationValidator? _fluentValidationValidator;
+    [Inject]
+    protected ToastService ToastService { get; set; } = default!;
+    [Inject]
+    protected PreloadService PreloadService { get; set; } = default!;
+
+    private async Task SubmitComment()
+    {
+        bool isValid = await _fluentValidationValidator!.ValidateAsync();
+        if (isValid)
+        {
+            PreloadService.Show(SpinnerColor.Light, "Saving data...");
+            //--------------------------
+            Comment.CreateDate = DateTime.Now;
+            Comment.ProductId = Product.Id;
+            //--------------------------
+            using var context = DbFactory.CreateDbContext();
+            //--------------------------
+            context.Comments.Add(Comment);
+            await context.SaveChangesAsync();
+            //--------------------------
+            Comments = await context.Comments.Where(x => x.ProductId == Product.Id).ToListAsync();
+            Comment = new();
+            //--------------------------
+            await Task.Delay(1500);
+            PreloadService.Hide();
+            ToastService.Notify(new(ToastType.Success, "Successfully saved!"));
+        }
+
+    }
+}

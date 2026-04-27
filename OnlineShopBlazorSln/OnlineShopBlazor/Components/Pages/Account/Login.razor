@@ -1,0 +1,95 @@
+﻿@page "/login"
+@using Microsoft.EntityFrameworkCore
+@using OnlineShopBlazor.Models.Db
+@using OnlineShopBlazor.Models.ViewModels
+@using OnlineShopBlazor.Models.Services
+@using FluentValidation
+@using Blazored.FluentValidation
+@inject IValidator< LoginViewModel> Validator
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject LoginService _loginService
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+
+
+
+<PageTitle>Login</PageTitle>
+<hr />
+<div class="row" style="margin-top:150px; width: 1520px;">
+    <div class="col-md-4 mx-auto">
+        <EditForm method="post" Model="LoginModel" OnValidSubmit="HandleValidSubmit" FormName="Login" Enhance>
+            <FluentValidationValidator Validator="Validator" />
+
+            @* Display general error messages *@
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @_errorMessage
+                </div>
+            }
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email:</label>
+                <InputText id="email" @bind-Value="LoginModel.Email" class="form-control" />
+                <ValidationMessage For="() => LoginModel.Email" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password:</label>
+                <InputText id="password" @bind-Value="LoginModel.Password" class="form-control" />
+                <ValidationMessage For="() => LoginModel.Password" class="text-danger" />
+            </div>
+            <button type="submit" class="btn btn-primary" disabled="@(loading ? "disabled" : null)">
+                @if (loading)
+                {
+                    <Spinner Class="me-3" Type="SpinnerType.Dots" Color="SpinnerColor.Light" />
+                }
+                else
+                {
+                    <span>
+                        Login
+                    </span>
+                }
+            </button>
+        </EditForm>
+        <br />
+        <div>
+            <a href="/register">Want to create an account? Register</a>
+        </div>
+        <div>
+            <a href="/recovery">Forgot Password? Recover</a>
+        </div>
+    </div>
+</div>
+
+<Preload />
+
+@code {
+    // Use the User model directly for binding
+    [SupplyParameterFromForm]
+    public LoginViewModel LoginModel { get; set; } = new();
+
+    private string? _errorMessage = null;
+    private bool loading = false;
+
+    private async Task HandleValidSubmit()
+    {
+        loading = true;
+        await Task.Delay(1500);
+
+        using var _context = DbFactory.CreateDbContext();
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == LoginModel.Email.ToLower().Trim() && x.Password == LoginModel.Password.Trim());
+
+        if (user != null)
+        {
+            await JS.InvokeVoidAsync("submitLoginForm", LoginModel.Email, LoginModel.Password);
+        }
+        else
+        {
+            _errorMessage = "Invalid username or password.";
+            loading = false;
+        }
+
+    }
+}

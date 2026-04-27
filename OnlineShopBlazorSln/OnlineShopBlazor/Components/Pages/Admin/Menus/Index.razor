@@ -1,0 +1,40 @@
+﻿@page "/menus"
+
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using OnlineShopBlazor.Models.Db
+@implements IAsyncDisposable
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Menus Index</PageTitle>
+
+<h1>Menus</h1>
+
+<p>
+    <a class="btn btn-info p-1" href="menus/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.Menus">
+    <PropertyColumn Property="menu => menu.MenuTitle" />
+    <PropertyColumn Property="menu => menu.Link" />
+    <PropertyColumn Property="menu => menu.Type" />
+
+    <TemplateColumn Context="menu">
+        <a class="btn btn-info p-1" href="@($"menus/edit?id={menu.Id}")">Edit</a> |
+        <a class="btn btn-warning p-1" href="@($"menus/details?id={menu.Id}")">Details</a> |
+        <a class="btn btn-danger p-1" href="@($"menus/delete?id={menu.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private OnlineShopContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

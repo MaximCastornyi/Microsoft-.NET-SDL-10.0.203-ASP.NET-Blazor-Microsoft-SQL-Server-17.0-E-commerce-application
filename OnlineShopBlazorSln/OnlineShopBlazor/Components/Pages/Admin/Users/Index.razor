@@ -1,0 +1,42 @@
+﻿@page "/users"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using OnlineShopBlazor.Models.Db
+@implements IAsyncDisposable
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Users Index</PageTitle>
+
+<h1>Users</h1>
+
+<p>
+    <a class="btn btn-info p-1" href="products/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.Users">
+    <PropertyColumn Property="user => user.Email" />
+    <PropertyColumn Property="user => user.FullName" />
+    <PropertyColumn Property="user => user.Password" />
+    <PropertyColumn Property="user => user.IsAdmin" />
+    <PropertyColumn Property="user => user.RegisterDate" />
+    <PropertyColumn Property="user => user.RecoveryCode" />
+
+    <TemplateColumn Context="user">
+        <a class="btn btn-info p-1" href="@($"users/edit?id={user.Id}")">Edit</a> |
+        <a class="btn btn-warning p-1" href="@($"users/details?id={user.Id}")">Details</a> |
+        <a class="btn btn-danger p-1" href="@($"users/delete?id={user.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private OnlineShopContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

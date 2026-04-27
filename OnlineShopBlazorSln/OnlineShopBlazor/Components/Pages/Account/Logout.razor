@@ -1,0 +1,16 @@
+﻿@page "/logout"
+@using OnlineShopBlazor.Models.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject LoginService _loginService
+@inject NavigationManager _navigationManager
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await _loginService.LogoutAsync();
+        if (result)
+        {
+            _navigationManager.NavigateTo("/login");
+        }
+    }
+}

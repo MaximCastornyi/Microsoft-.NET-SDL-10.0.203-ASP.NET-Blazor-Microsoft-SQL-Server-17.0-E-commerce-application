@@ -1,0 +1,52 @@
+﻿@page "/products"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using OnlineShopBlazor.Models.Db
+@implements IAsyncDisposable
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Products Index</PageTitle>
+
+<h1>Products</h1>
+
+<p>
+    <a class="btn btn-info p-1" href="products/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.Products">
+    <PropertyColumn Property="product => product.Id" />
+    <TemplateColumn Context="product" Title="Image">
+        <img src="/images/products/@product.ImageName" alt="@product.Title" style="max-width:100px" />
+    </TemplateColumn>
+    <PropertyColumn Property="product => product.Title" />
+    @* <PropertyColumn Property="product => product.Description" />
+    <PropertyColumn Property="product => product.FullDesc" /> *@
+    <PropertyColumn Property="product => product.Price" />
+    <PropertyColumn Property="product => product.Discount" />
+    @* <PropertyColumn Property="product => product.ImageName" /> *@
+
+    <PropertyColumn Property="product => product.Qty" />
+    @* <PropertyColumn Property="product => product.Tags" />
+    <PropertyColumn Property="product => product.VideoUrl" /> *@
+
+    <TemplateColumn Context="product">
+        <div class="d-flex" style="">
+        <a class="btn btn-info p-1" href="@($"products/edit?id={product.Id}")">Edit</a> |
+        <a class="btn btn-warning p-1" href="@($"products/details?id={product.Id}")">Details</a> |
+        <a class="btn btn-danger p-1" href="@($"products/delete?id={product.Id}")">Delete</a>
+        </div>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private OnlineShopContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

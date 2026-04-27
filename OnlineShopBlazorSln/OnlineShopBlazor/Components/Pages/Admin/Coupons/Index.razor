@@ -1,0 +1,38 @@
+﻿@page "/coupons"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using OnlineShopBlazor.Models.Db
+@implements IAsyncDisposable
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Coupons Index</PageTitle>
+
+<h1>Coupons</h1>
+
+<p>
+    <a class="btn btn-info p-1" href="menus/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.Coupons">
+    <PropertyColumn Property="coupon => coupon.Code" />
+    <PropertyColumn Property="coupon => coupon.Discount" />
+
+    <TemplateColumn Context="coupon">
+        <a class="btn btn-info p-1" href="@($"coupons/edit?id={coupon.Id}")">Edit</a> |
+        <a class="btn btn-warning p-1" href="@($"coupons/details?id={coupon.Id}")">Details</a> |
+        <a class="btn btn-danger p-1" href="@($"coupons/delete?id={coupon.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private OnlineShopContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

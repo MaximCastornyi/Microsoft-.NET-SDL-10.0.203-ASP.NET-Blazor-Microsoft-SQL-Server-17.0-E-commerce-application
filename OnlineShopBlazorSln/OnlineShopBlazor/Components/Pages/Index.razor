@@ -1,0 +1,207 @@
+﻿@page "/"
+@page "/index"
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbContextFactory
+@rendermode InteractiveServer
+
+<!--slider area start-->
+<section class="mb-63">
+    <Carousel ShowIndicators="true">
+        @{
+            bool isactive = true;
+        }
+        @foreach (var item in Slides)
+        {
+            <CarouselItem Active="@isactive">
+                <div class="single_slider d-flex align-items-center" style=" background-image:url('/images/banners/@item.ImageName');height=100vh">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-6 col-md-7">
+                                <div class="slider_text">
+                                    <span>Lookbook</span>
+                                    <h1>@((MarkupString)(item.Title?.Replace("\n", "<br/>")))</h1>
+                                    <p>@((MarkupString)(item.SubTitle?.Replace("\n", "<br/>")))</p>
+                                    @if (!string.IsNullOrEmpty(item.Link))
+                                    {
+                                        <a class="btn btn-primary" href="@item.Link">
+                                            Explore Now
+                                        </a>
+                                    }
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </CarouselItem>
+            //------------
+            isactive = false;
+        }
+         
+    </Carousel>
+
+       
+        
+      
+</section>
+<!--slider area end-->
+<!--shipping section start-->
+<section class="shipping_section mb-102">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="shipping_inner d-flex justify-content-between">
+                    <div class="single_shipping d-flex align-items-center">
+                        <div class="shipping_icon">
+                            <i class="icon-cursor icons"></i>
+                        </div>
+                        <div class="shipping_text">
+                            <h3>Free Shipping</h3>
+                            <p>Orders over $100</p>
+                        </div>
+                    </div>
+                    <div class="single_shipping d-flex align-items-center">
+                        <div class="shipping_icon">
+                            <i class="icon-reload icons"></i>
+                        </div>
+                        <div class="shipping_text">
+                            <h3>Free Returns</h3>
+                            <p>Within 30 days</p>
+                        </div>
+                    </div>
+                    <div class="single_shipping d-flex align-items-center">
+                        <div class="shipping_icon">
+                            <i class="icon-lock icons"></i>
+                        </div>
+                        <div class="shipping_text">
+                            <h3>100% Payment Secure</h3>
+                            <p>Payment Online</p>
+                        </div>
+                    </div>
+                    <div class="single_shipping d-flex align-items-center">
+                        <div class="shipping_icon">
+                            <i class="icon-tag icons"></i>
+                        </div>
+                        <div class="shipping_text">
+                            <h3>Affordable Price</h3>
+                            <p>Guaranteed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!--shipping section end-->
+<!-- banner section start -->
+<section class="banner_section mb-109">
+    <div class="container">
+        <div class="section_title mb-60">
+            <h2>featured collections</h2>
+        </div>
+        <div class="banner_container d-flex">
+            @foreach (var item in Banner1)
+            {
+                <figure class="single_banner position-relative mr-30">
+                    <img src="/images/banners/@item.ImageName" alt="@item.Title">
+                    <figcaption class="banner_text position-absolute">
+                        <h3>@((MarkupString)(item.Title?.Replace("\n", "<br/>")))</h3>
+                        <p>@((MarkupString)(item.SubTitle?.Replace("\n", "<br/>")))</p>
+                        @if (!string.IsNullOrEmpty(item.Link))
+                        {
+                            <a class="btn btn-primary" href="@item.Link">
+                                Shop Now
+                            </a>
+                        }
+                    </figcaption>
+                </figure>
+            }
+            
+             
+        </div>
+    </div>
+</section>
+<!-- banner section end -->
+<!-- product section start -->
+<section class="product_section mb-96">
+    <div class="container">
+        <div class="product_header d-flex justify-content-between  mb-50">
+            <div class="section_title">
+                <h2>best selling items</h2>
+            </div>
+            
+        </div>
+        <div class="product_container row">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="all" role="tabpanel">
+                    <OnlineShopBlazor.Components.Pages.Common.BestSellingComponent />
+                </div>
+               
+            </div>
+        </div>
+    </div>
+</section>
+<!-- product section end -->
+<!-- banner section start -->
+<section class="banner_section banner_style2 mb-109">
+    <div class="container-fluid">
+        <div class="row">
+            
+            @foreach (var item in Banner2)
+            {
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                    <figure class="single_banner position-relative">
+                        <img src="/images/banners/@item.ImageName" alt="@item.Title">
+                        <div class="banner_text position-absolute">
+                            <h3>@((MarkupString)(item.Title?.Replace("\n", "<br/>")))</h3>
+                            <p>@((MarkupString)(item.SubTitle?.Replace("\n", "<br/>")))</p>
+                            @if (!string.IsNullOrEmpty(item.Link))
+                            {
+                                <a class="btn btn-primary" href="@item.Link">
+                                    Shop Now
+                                </a>
+                            }
+                        </div>
+
+                    </figure>
+                </div>
+            }
+                
+            
+             
+        </div>
+    </div>
+</section>
+<!-- banner section end -->
+<!-- product section start -->
+<section class="product_section mb-80">
+    <div class="container">
+        <div class="product_header d-flex justify-content-between  mb-60">
+            <div class="section_title">
+                <h2>new arrivals</h2>
+            </div>
+           
+        </div>
+        <div class="product_container row">
+            <OnlineShopBlazor.Components.Pages.Common.NewProductsComponent />
+        </div>
+    </div>
+</section>
+<!-- product section end -->
+@code {
+    public List<Banner> Slides { get; set; } = new List<Banner>();
+    public List<Banner> Banner1 { get; set; } = new List<Banner>();
+    public List<Banner> Banner2 { get; set; } = new List<Banner>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var dbContext = DbContextFactory.CreateDbContext();
+
+        var banners = await dbContext.Banners.ToListAsync();
+
+        Slides = banners.Where(x => x.Position == "Slider").OrderBy(x => x.Priority).ToList();
+        Banner1 = banners.Where(x => x.Position == "Banner1").OrderBy(x => x.Priority).ToList();
+        Banner2 = banners.Where(x => x.Position == "Banner2").OrderBy(x => x.Priority).ToList();
+    }
+
+}

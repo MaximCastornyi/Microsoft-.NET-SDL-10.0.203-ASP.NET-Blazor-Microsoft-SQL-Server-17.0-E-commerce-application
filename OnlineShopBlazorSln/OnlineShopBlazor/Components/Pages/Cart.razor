@@ -1,0 +1,294 @@
+﻿@page "/cart"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using OnlineShopBlazor.Models.ViewModels
+@using System.Security.Claims
+@inject IDbContextFactory<OnlineShopContext> DbContextFactory
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<!--shopping cart area start -->
+<div class="shopping_cart_area" style="margin-top:200px;">
+    <div class="container">
+        @if (Model.Any())
+        {
+
+            <div class="cart_page_inner mb-60">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="cart_page_tabel">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>product </th>
+                                        <th>information</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr class="border-top">
+                                            <td>
+                                                <div class="cart_product_thumb">
+                                                    <img src="/images/products/@item.ImageName" alt="@item.Title">
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="cart_product_text">
+                                                    <h4>@item.Title</h4>
+
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="cart_product_price">
+                                                    <span>
+                                                        @{
+                                                            var final_price = item.Price - item.Discount;
+                                                        }
+                                                        $@final_price.ToString("F")
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="product_quantity">
+                                                <div class="cart_product_quantity">
+                                                    <input min="1"
+                                                           max="100"
+                                                           @bind="@item.Count"
+                                                           @onblur="() => UpdateQuantity(item.ProductId, item.Count)"
+                                                           type="number">
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="cart_product_price">
+                                                        <span>
+                                                            $@item.RowSum.ToString("F")
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="cart_product_remove text-right">
+                                                        <a @onclick="() => RemoveItem(item.ProductId)">
+                                                            <i class="ion-android-close"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+
+                                            </tr>
+                                        }
+                                        
+
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="cart_page_button border-top d-flex justify-content-between">
+                                <div class="shopping_cart_btn">
+                                    <a @onclick="ClearCart" class="btn btn-primary border">CLEAR SHOPPING CART</a>
+                                    <a class="btn btn-primary border">UPDATE YOUR CART</a>
+                                </div>
+                                <div class="shopping_continue_btn">
+                                    <button class="btn btn-primary" type="submit">CONTINUE SHOPPING</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--coupon code area start-->
+                <div class="cart_page_bottom">
+                    <div class="row d-flex justify-content-end">
+
+                        <div class="col-lg-4 col-md-6 col-sm-8">
+                            <div class="grand_totall_area">
+                                <div class="grand_totall_inner border-bottom">
+                                    
+                                    <div class="cart_grandtotal d-flex justify-content-between">
+                                        <p>grand total</p>
+                                        <span>$@Model.Sum(x => x.RowSum).ToString("F")</span>
+                                    </div>
+                                </div>
+                                <div class="proceed_checkout_btn">
+                                    <a class="btn btn-primary" href="/checkout">Proceed to Checkout</a>
+                                </div>
+                                <a href="#">Checkout with Mutilple Adresses</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--coupon code area end-->
+            }
+        else
+            {
+                <div class="alert alert-info" role="alert">
+                    The cart is empty!
+                </div>
+            }
+       
+        </div>
+    </div>
+<!--shopping cart area end -->
+@code {
+    // Public property to hold the list of items displayed in the cart view.
+    // Initialized with an empty list.
+    public List<CartViewItemViewModel> Model { get; set; } = new();
+
+    // Blazor lifecycle method that runs when the component is initialized.
+    // Asynchronously loads the cart data.
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCartAsync();
+    }
+
+    // Asynchronous method to retrieve the ID of the currently authenticated user.
+    private async Task<int> GetUserIdAsync()
+    {
+        // Get the current authentication state using the injected provider.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        // Get the user principal from the authentication state.
+        var user = authState.User;
+
+        // Check if the user is authenticated.
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // Find the NameIdentifier claim (usually contains the user ID).
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // Parse the user ID claim to an integer and return it.
+            // Use TryParse for safer parsing.
+            if (int.TryParse(userIdClaim, out int userId))
+            {
+                return userId;
+            }
+        }
+        // Return 0 if the user is not authenticated or the ID cannot be parsed.
+        return 0;
+    }
+
+    // Asynchronous method to load the user's cart items from the database.
+    private async Task LoadCartAsync()
+    {
+        // Create a database context instance using the injected factory.
+        // The 'using' statement ensures the context is disposed properly.
+        using var _context = DbContextFactory.CreateDbContext();
+
+        // Get the ID of the currently logged-in user.
+        var userId = await GetUserIdAsync();
+
+        // Retrieve all cart items belonging to the current user from the database.
+        var cartItems = await _context.Carts
+                                     .Where(c => c.UserId == userId) // Filter by user ID
+                                     .ToListAsync(); // Execute the query asynchronously
+
+        // Extract the distinct product IDs from the cart items.
+        var productIds = cartItems.Select(c => c.ProductId).Distinct().ToList();
+
+        // Retrieve the product details for all products present in the cart.
+        var products = await _context.Products
+                                   .Where(p => productIds.Contains(p.Id)) // Filter by the list of product IDs
+                                   .ToListAsync(); // Execute the query asynchronously
+
+        var result = new List<CartViewItemViewModel>();
+        foreach (var item in cartItems)
+        {
+            // Find the corresponding product details for the current cart item.
+            var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+
+            // If product details are not found (e.g., product deleted), return null.
+            if (product == null) return;
+
+            // Create a new view model instance with combined cart and product data.
+            var cartitem = new CartViewItemViewModel
+            {
+                ProductId = product.Id,
+                Title = product.Title,
+                ImageName = product.ImageName,
+                Price = product.Price ?? 0, // Use null-coalescing operator for default value
+                Discount = product.Discount ?? 0, // Use null-coalescing operator for default value
+                Count = item.Count,
+            };
+
+            cartitem.RowSum = cartitem.Count * (cartitem.Price - cartitem.Discount);
+
+            result.Add(cartitem);
+        }
+        Model = result;
+    }
+
+    // Asynchronous method to remove all items from the user's cart.
+    private async Task ClearCart()
+    {
+        // Create a database context instance.
+        using var _context = DbContextFactory.CreateDbContext();
+
+        // Get the current user's ID.
+        var userId = await GetUserIdAsync();
+
+        // Find all cart items belonging to the current user.
+        var cartItems = _context.Carts.Where(c => c.UserId == userId);
+        // Remove the found cart items from the context.
+        _context.Carts.RemoveRange(cartItems);
+        // Save the changes to the database asynchronously.
+        await _context.SaveChangesAsync();
+
+        // Reload the cart data to update the UI (which will now be empty).
+        await LoadCartAsync();
+
+        // Navigate the user to the main shop page after clearing the cart.
+        NavigationManager.NavigateTo("/Shop");
+    }
+
+    // Asynchronous method to update the quantity of a specific item in the cart.
+    private async Task UpdateQuantity(int productId, int newQuantity)
+    {
+        // Create a database context instance.
+        using var _context = DbContextFactory.CreateDbContext();
+
+        // Get the current user's ID.
+        var userId = await GetUserIdAsync();
+
+        // Find the specific cart item based on user ID and product ID.
+        var cartItem = await _context.Carts
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+
+        // If the cart item is found:
+        if (cartItem != null)
+        {
+            // Update its quantity.
+            cartItem.Count = newQuantity;
+            // Save the changes to the database asynchronously.
+            await _context.SaveChangesAsync();
+        }
+
+        // Reload the cart data to reflect the updated quantity and row sum in the UI.
+        await LoadCartAsync();
+    }
+
+    // Asynchronous method to remove a specific product from the cart.
+    private async Task RemoveItem(int productId)
+    {
+        // Create a database context instance.
+        using var _context = DbContextFactory.CreateDbContext();
+
+        // Get the current user's ID.
+        var userId = await GetUserIdAsync();
+
+        // Find the specific cart item based on user ID and product ID.
+        var cartItem = await _context.Carts
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+
+        // If the cart item is found:
+        if (cartItem != null)
+        {
+            // Remove the item from the context.
+            _context.Carts.Remove(cartItem);
+            // Save the changes to the database asynchronously.
+            await _context.SaveChangesAsync();
+        }
+
+        // Reload the cart data to reflect the removal in the UI.
+        await LoadCartAsync();
+    }
+}

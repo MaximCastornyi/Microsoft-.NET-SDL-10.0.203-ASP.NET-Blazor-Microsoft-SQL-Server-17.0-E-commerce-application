@@ -1,0 +1,53 @@
+﻿@rendermode InteractiveServer
+
+<div class="product_thumb">
+    <a href="/productdetails?id=@Model.Id">
+        <img class="primary_img" src="/images/products/@Model.ImageName" alt="consectetur">
+    </a>
+    @if (Model.Discount != null && Model.Price > 0 && Model.Discount > 0)
+    {
+        <div class="product_label">
+            @{
+                decimal? discountPercentage;
+                discountPercentage = (Model.Discount.GetValueOrDefault(0) / Model.Price.GetValueOrDefault(0)) * 100;
+            }
+
+            <span>
+                -@discountPercentage.GetValueOrDefault(0).ToString("F0")%
+            </span>
+        </div>
+    }
+
+</div>
+<div class="product_content grid_content text-center">
+
+    <h4 class="product_name"><a href="/productdetails?id=@Model.Id">@Model.Title</a></h4>
+    @if (Model.Discount != null && Model.Discount > 0)
+    {
+        <div class="price_box">
+            @{
+                decimal? discounted_price;
+                discounted_price = Model.Price.GetValueOrDefault(0) - Model.Discount.GetValueOrDefault(0);
+            }
+            <span class="current_price">
+                $@discounted_price.GetValueOrDefault(0).ToString("F")
+            </span>
+            <span class="old_price">
+                $@Model.Price.GetValueOrDefault(0).ToString("F")
+            </span>
+        </div>
+    }
+    else
+    {
+        <div class="price_box">
+            <span class="current_price">$@Model.Price.GetValueOrDefault(0).ToString("F")</span>
+        </div>
+    }
+    <div class="add_to_cart">
+        <OnlineShopBlazor.Components.Pages.Common.AddToCartButtonComponent ProductId="Model.Id" /> 
+    </div>
+</div>
+@code {
+    [Parameter]
+    public Product Model { get; set; }
+}

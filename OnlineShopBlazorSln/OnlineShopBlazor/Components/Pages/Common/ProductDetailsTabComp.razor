@@ -1,0 +1,46 @@
+﻿@rendermode InteractiveServer
+
+<Tabs>
+    <Tab Title="Product Description" Active="true">
+        <Content>
+            <div class="product_info_content">
+                @((MarkupString)(Product.FullDesc?.Replace("\n", "<br/>")))
+            </div>
+        </Content>
+    </Tab>
+    <Tab Title="Reviews">
+        <Content>
+             <OnlineShopBlazor.Components.Pages.Common.CommentComponent Product="@Product" /> 
+        </Content>
+    </Tab>
+    <Tab Title="Tags">
+        <Content>
+            <div class="product_info_content">
+                <ul>
+                    @if (!string.IsNullOrEmpty(Product.Tags))
+                    {
+                        var tags = Product.Tags.Split(",");
+                                                
+                        @foreach (var item in tags)
+                        {
+                            <li> @item</li>
+                        }
+
+                    }
+                </ul>
+            </div>
+        </Content>
+    </Tab>
+    <Tab Title="Custom Tab Video">
+        <Content>
+            <div class="product_tab_vidio text-center">
+                <iframe width="729" height="410" src="@Product.VideoUrl" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </Content>
+    </Tab>
+</Tabs>
+
+@code {
+    [Parameter]
+    public Product Product { get; set; }
+}

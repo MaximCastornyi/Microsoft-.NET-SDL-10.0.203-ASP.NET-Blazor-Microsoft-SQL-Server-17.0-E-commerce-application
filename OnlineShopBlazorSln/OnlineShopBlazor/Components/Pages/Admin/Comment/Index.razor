@@ -1,0 +1,37 @@
+﻿@page "/comments"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using OnlineShopBlazor.Models.Db
+@implements IAsyncDisposable
+@inject IDbContextFactory<OnlineShopBlazor.Models.Db.OnlineShopContext> DbFactory
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Comments Index</PageTitle>
+
+<h1>Comments</h1>
+
+<QuickGrid Class="table" Items="context.Comments">
+    <PropertyColumn Property="comment => comment.Name" />
+    <PropertyColumn Property="comment => comment.Email" />
+    <PropertyColumn Property="comment => comment.CommentText" />
+    <PropertyColumn Property="comment => comment.ProductId" />
+    <PropertyColumn Property="comment => comment.CreateDate" />
+
+    <TemplateColumn Context="comment">
+        <a class="btn btn-info p-1" href="@($"comments/edit?id={comment.Id}")">Edit</a> |
+        <a class="btn btn-warning p-1" href="@($"comments/details?id={comment.Id}")">Details</a> |
+        <a class="btn btn-danger p-1" href="@($"comments/delete?id={comment.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private OnlineShopContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}
